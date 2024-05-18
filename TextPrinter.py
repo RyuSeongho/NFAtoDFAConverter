@@ -21,6 +21,15 @@ def print_txt(fa, folder_name):
         file.write("DeltaFunctions = {\n")
         for (from_state, terminal), to_state in fa.delta_functions.items():
             file.write(f"\t({from_state}, {terminal}) = {{{', '.join(sorted(to_state))}}}\n")
+            """
+            states = to_state.copy()
+
+            to_state_print = str(states.pop())
+            while states:
+                state_element = states.pop()
+                to_state_print += (', ' + state_element)
+            file.write(f"\t({from_state}, {terminal}) = {to_state_print}\n")
+            """
         file.write("}\n")
         file.write(f"StartState = {fa.start_state}\n")
         file.write(f"FinalStateSet = {{{', '.join(sorted(fa.final_state_set))}}}\n")

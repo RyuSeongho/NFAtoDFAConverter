@@ -39,9 +39,9 @@ class FiniteAutomata:
         result = '['
         for material in sorted_list:
             result += str(material)
-            result += ','
+            result += ' '
 
-        result = result.rstrip(',')
+        result = result.rstrip(' ')
         result += ']'
 
         return result
@@ -78,14 +78,10 @@ class FiniteAutomata:
         task_state_set_queue = deque()
         task_state_set_queue.append(dfa.start_state)
 
-        print("tssq:", task_state_set_queue)
-        print(len(task_state_set_queue))
-
         while len(task_state_set_queue) > 0:
             curr_state_integrated = task_state_set_queue.popleft()
-            print(len(task_state_set_queue))
-            curr_state_set = curr_state_integrated.strip('[]').split(',')
-            print("css", curr_state_set)
+            #print(len(task_state_set_queue))
+            curr_state_set = curr_state_integrated.strip('[]').split(' ')
 
             for terminal in dfa.terminal_set:
 
@@ -103,7 +99,7 @@ class FiniteAutomata:
                 integrated_string = FiniteAutomata.integrate(result_set_for_terminal)
                 dfa.delta_functions[(curr_state_integrated, terminal)] = {integrated_string}
 
-                print("result", terminal, integrated_string)
+                #print("result", terminal, integrated_string)
 
                 if integrated_string in dfa.state_set:
                     continue
@@ -118,15 +114,106 @@ class FiniteAutomata:
 
         return dfa
 
-    # def to_dfa(self):
-    #     # (ε-)NFA를 DFA로 변환
-    #     pass
-    #
-    # def minimize_dfa(self):
-    #     # DFA 최소화
-    #     pass
-    #
-    # def write_to_file(self, filename):
-    #     with open(filename, 'w') as file:
-    #         # 상태 기계 정보를 파일로 쓰는 로직 구현
-    #         pass
+    def reduce_dfa(self):
+
+        rdfa = FiniteAutomata()
+
+        group = {}
+        group_result_tuples = []
+        prev_state_size = 2
+
+        for state in self.state_set:
+            if state in self.final_state_set:
+                group[state] = 1
+            else:
+                group[state] = 0
+
+        while True:
+            new_group = {}
+            print(group)
+            for state in self.state_set:
+                group_for_all_terminal = []
+                curr_dict = {'group': group[state]}
+
+                for terminal in sorted(self.terminal_set):
+                    result_set = self.calc(state, terminal)
+                    if len(result_set) <= 0:
+                        group_for_all_terminal.append(-1)
+                    else:
+                        result = result_set.pop()
+                        group_for_all_terminal.append(group[result])
+
+                curr_dict['result'] = tuple(group_for_all_terminal)
+
+                curr_tuple = tuple(curr_dict.items())
+
+                if curr_tuple not in group_result_tuples:
+                    group_result_tuples.append(curr_tuple)
+                    new_group[state] = len(group_result_tuples) - 1
+                else:
+                    new_group[state] = group_result_tuples.index(curr_tuple)
+
+            if prev_state_size == len(group_result_tuples):
+                break
+
+            group = new_group.copy()
+            prev_state_size = len(group_result_tuples)
+            group_result_tuples.clear()
+
+        rdfa.file_name = self.file_name
+        rdfa.terminal_set = self.terminal_set
+
+        map_new_state_to_name = {}
+
+        for i in range(prev_state_size):
+            map_new_state_to_name[i] = '['
+
+        for state in self.state_set:
+            map_new_state_to_name[group[state]] += (str(state) + ' ')
+
+        for state in self.state_set:
+            new_name = map_new_state_to_name[group[state]].rstrip(' ') + ']'
+            rdfa.state_set.add(new_name)
+            if state in self.final_state_set:
+                rdfa.final_state_set.add(new_name)
+            if state == self.start_state:
+                rdfa.start_state = new_name
+
+        for (state, terminal), value in self.delta_functions.items():
+            print("!!!!", state, terminal, value)
+
+            new_key = (map_new_state_to_name[group[state]].rstrip(' ') + ']', terminal)
+            new_value = map_new_state_to_name[group[value.pop()]].rstrip(' ') + ']'
+            rdfa.delta_functions[new_key] = {new_value}
+
+        return rdfa
+
+
+
+
+'''
+    def reduce_dfa(self):
+        sorted_terminals = sorted(self.terminal_set)
+        group_mapping_dict = {}
+        group_stick_dict = {}
+        representitive_dict = {}
+
+        for state in self.state_set:
+            if state in self.final_state_set:
+                group_mapping_dict[state] = 1
+            else:
+                group_mapping_dict[state] = 0
+
+        for state in self.state_set:
+            for terminal in sorted_terminals:
+                result_set = self.calc(state, terminal)
+                if len(result_set) <= 0:
+                    group_stick_dict[state].append(-1)
+                else:
+                    result = group_mapping_dict[result_set.pop()]
+                    group_stick_dict[state].append(result)
+
+        for state in self.state_set:
+            if representitive_dict[group_mapping_dict[state]] is None:
+                representitive_dict[group_mapping_dict[state]] = state
+   '''
