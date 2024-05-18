@@ -12,6 +12,7 @@ class FiniteAutomata:
         self.delta_functions = {}
         self.start_state = None
         self.final_state_set = set()
+        self.file_name = "UnnamedAutomata.txt"
 
         if file_path:
             self.parse(file_path)
@@ -21,10 +22,12 @@ class FiniteAutomata:
          self.terminal_set,
          self.delta_functions,
          self.start_state,
-         self.final_state_set) = parse_to_object(file_path)
+         self.final_state_set,
+         self.file_name) = parse_to_object(file_path)
 
     def __str__(self):
-        return (f"StateSet={self.state_set}\n"
+        return (f"FileName={self.file_name}\n"
+                f"StateSet={self.state_set}\n"
                 f"TerminalSet={self.terminal_set}\n"
                 f"DeltaFunctions={self.delta_functions}\n"
                 f"StartState={self.start_state}\n"
@@ -60,6 +63,8 @@ class FiniteAutomata:
 
         dfa = FiniteAutomata()
 
+        dfa.file_name = self.file_name
+
         dfa.terminal_set.update(self.terminal_set)
         start_state_ep = ec(self, self.start_state)
         dfa.start_state = FiniteAutomata.integrate(start_state_ep)
@@ -83,8 +88,6 @@ class FiniteAutomata:
             print("css", curr_state_set)
 
             for terminal in dfa.terminal_set:
-                if terminal == 'ε':
-                    continue
 
                 result_set_for_terminal = set()
                 for state in curr_state_set:
@@ -98,7 +101,7 @@ class FiniteAutomata:
                     continue
 
                 integrated_string = FiniteAutomata.integrate(result_set_for_terminal)
-                dfa.delta_functions[(curr_state_integrated, terminal)] = integrated_string
+                dfa.delta_functions[(curr_state_integrated, terminal)] = {integrated_string}
 
                 print("result", terminal, integrated_string)
 

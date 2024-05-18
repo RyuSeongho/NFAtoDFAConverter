@@ -1,5 +1,5 @@
 # TextParser.py
-
+import os.path
 import re
 
 
@@ -50,4 +50,4 @@ def parse_to_object(file_path):
             final_states = final_state_set_match.group(1).split(',')
             final_state_set = set(final_states)
 
-        return state_set, terminal_set, delta_functions, start_state, final_state_set
+        return state_set, terminal_set, delta_functions, start_state, final_state_set, os.path.basename(file_path)

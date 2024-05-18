@@ -1,16 +1,31 @@
 import FiniteAutomata
 import os
 import glob
+from TextPrinter import print_txt
 
 def main():
-    file_path = "C:\\Users\\ryuse\\Desktop\\류성호\\동국대학교\\3학년\\1학기\\형식언어\\HW2\\NFA"
+    current_file_path = os.path.abspath(__file__)
+    current_directory = os.path.dirname(current_file_path)
+    file_path = current_directory + "/input"
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+        print("no directory found")
+        return
+
     files = glob.glob(os.path.join(file_path, "*.txt"))
 
+    if not files:
+        print("no files found")
+        return
+
     for file in files:
+
         fa = FiniteAutomata.FiniteAutomata(file)
-        print(os.path.basename(file))
         print(fa.__str__())
-        print(fa.make_dfa().__str__())
+        print_txt(fa, "NFA")
+        fa = fa.make_dfa()
+        print(fa.__str__())
+        print_txt(fa, "DFA")
         print('\n')
 
 
