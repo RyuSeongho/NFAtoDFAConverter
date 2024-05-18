@@ -1,6 +1,8 @@
 # FiniteAutomata.py
 
 from TextParser import parse_to_object
+from collections import deque
+from EpsilonClosure import epsilon_closure as ec
 
 
 class FiniteAutomata:
@@ -28,10 +30,91 @@ class FiniteAutomata:
                 f"StartState={self.start_state}\n"
                 f"FinalStateSet={self.final_state_set}")
 
-    # def epsilon_closure(self, states):
-    #     # 입실론 클로저 계산 로직
-    #     pass
-    #
+    @staticmethod
+    def integrate(material_set):
+        sorted_list = sorted(list(material_set))
+        result = '['
+        for material in sorted_list:
+            result += str(material)
+            result += ','
+
+        result = result.rstrip(',')
+        result += ']'
+
+        return result
+
+    def calc(self, start_state, terminal):
+        result = set()
+
+        key = (start_state, terminal)
+        value = self.delta_functions.get(key)
+        if value is not None:
+            for single_value in value:
+                value_ep = ec(self, single_value)
+                for value_ep_single in value_ep:
+                    result.add(value_ep_single)
+
+        return result
+
+    def make_dfa(self):
+
+        dfa = FiniteAutomata()
+
+        dfa.terminal_set.update(self.terminal_set)
+        start_state_ep = ec(self, self.start_state)
+        dfa.start_state = FiniteAutomata.integrate(start_state_ep)
+
+        dfa.state_set.add(dfa.start_state)
+
+        for final_state in self.final_state_set:
+            if final_state in start_state_ep:
+                dfa.final_state_set.add(dfa.start_state)
+
+        task_state_set_queue = deque()
+        task_state_set_queue.append(dfa.start_state)
+
+        print("tssq:", task_state_set_queue)
+        print(len(task_state_set_queue))
+
+        while len(task_state_set_queue) > 0:
+            curr_state_integrated = task_state_set_queue.popleft()
+            print(len(task_state_set_queue))
+            curr_state_set = curr_state_integrated.strip('[]').split(',')
+            print("css", curr_state_set)
+
+            for terminal in dfa.terminal_set:
+                if terminal == 'ε':
+                    continue
+
+                result_set_for_terminal = set()
+                for state in curr_state_set:
+                    result_set = self.calc(state, terminal)
+                    if len(result_set) <= 0:
+                        continue
+                    for result in result_set:
+                        result_set_for_terminal.add(result)
+
+                if len(result_set_for_terminal) <= 0:
+                    continue
+
+                integrated_string = FiniteAutomata.integrate(result_set_for_terminal)
+                dfa.delta_functions[(curr_state_integrated, terminal)] = integrated_string
+
+                print("result", terminal, integrated_string)
+
+                if integrated_string in dfa.state_set:
+                    continue
+
+                task_state_set_queue.append(integrated_string)
+                dfa.state_set.add(integrated_string)
+
+                for final_state in self.final_state_set:
+                    if final_state in result_set_for_terminal:
+                        dfa.final_state_set.add(integrated_string)
+                        break
+
+        return dfa
+
     # def to_dfa(self):
     #     # (ε-)NFA를 DFA로 변환
     #     pass

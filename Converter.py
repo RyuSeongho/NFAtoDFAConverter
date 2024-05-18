@@ -9,7 +9,9 @@ def main():
     for file in files:
         fa = FiniteAutomata.FiniteAutomata(file)
         print(os.path.basename(file))
-        print(fa.__str__() + "\n")
+        print(fa.__str__())
+        print(fa.make_dfa().__str__())
+        print('\n')
 
 
 if __name__ == "__main__":
