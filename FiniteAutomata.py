@@ -58,7 +58,7 @@ class FiniteAutomata:
                 for value_ep_single in value_ep:
                     result.add(value_ep_single)
 
-        return result
+        return sorted(list(result))
 
     def make_dfa(self):
 
@@ -81,17 +81,16 @@ class FiniteAutomata:
 
         while len(task_state_set_queue) > 0:
             curr_state_integrated = task_state_set_queue.popleft()
-            #print(len(task_state_set_queue))
             curr_state_set = curr_state_integrated.strip('[]').split(' ')
 
             for terminal in dfa.terminal_set:
 
                 result_set_for_terminal = set()
                 for state in curr_state_set:
-                    result_set = self.calc(state, terminal)
-                    if len(result_set) <= 0:
+                    result_list = self.calc(state, terminal)
+                    if len(result_list) <= 0:
                         continue
-                    for result in result_set:
+                    for result in result_list:
                         result_set_for_terminal.add(result)
 
                 if len(result_set_for_terminal) <= 0:
@@ -99,8 +98,6 @@ class FiniteAutomata:
 
                 integrated_string = FiniteAutomata.integrate(result_set_for_terminal)
                 dfa.delta_functions[(curr_state_integrated, terminal)] = {integrated_string}
-
-                #print("result", terminal, integrated_string)
 
                 if integrated_string in dfa.state_set:
                     continue
@@ -131,17 +128,16 @@ class FiniteAutomata:
 
         while True:
             new_group = {}
-            print(group)
             for state in self.state_set:
                 group_for_all_terminal = []
                 curr_dict = {'group': group[state]}
 
                 for terminal in sorted(self.terminal_set):
-                    result_set = self.calc(state, terminal)
-                    if len(result_set) <= 0:
+                    result_list = self.calc(state, terminal)
+                    if len(result_list) <= 0:
                         group_for_all_terminal.append(-1)
                     else:
-                        result = result_set.pop()
+                        result = result_list.pop(0)
                         group_for_all_terminal.append(group[result])
 
                 curr_dict['result'] = tuple(group_for_all_terminal)
@@ -184,7 +180,6 @@ class FiniteAutomata:
                 rdfa.start_state = new_name
 
         for (state, terminal), value in self.delta_functions.items():
-            #print("!!!!", state, terminal, value)
 
             new_key = (map_new_state_to_name[group[state]], terminal)
             new_value = map_new_state_to_name[group[value.pop()]]
@@ -192,17 +187,20 @@ class FiniteAutomata:
 
         return rdfa
 
+    def convert_state_name(self, print_type='default'):
+        if print_type == 'original':
+            return self
 
-
-    def convert_state_name(self):
-        naming_module = Settings.NamingModule()
+        naming_module = Settings.NamingModule(print_type)
         new_fa = FiniteAutomata()
         new_fa.file_name = self.file_name
         new_fa.terminal_set = self.terminal_set
 
         map_new_state_to_name = {}
 
-        for state in self.state_set:
+        state_list = sorted(list(self.state_set))
+
+        for state in state_list:
             new_name = naming_module.get_name()
             map_new_state_to_name[state] = new_name
             new_fa.state_set.add(new_name)
@@ -215,35 +213,10 @@ class FiniteAutomata:
 
         for (state, terminal), value in self.delta_functions.items():
             new_key = (map_new_state_to_name[state], terminal)
-            new_value = map_new_state_to_name[value.pop()]
-            new_fa.delta_functions[new_key] = {new_value}
+            new_value_set = set()
+            value_list = sorted(list(value))
+            while value_list:
+                new_value_set.add(map_new_state_to_name[value_list.pop(0)])
+            new_fa.delta_functions[new_key] = new_value_set
 
         return new_fa
-
-
-'''
-    def reduce_dfa(self):
-        sorted_terminals = sorted(self.terminal_set)
-        group_mapping_dict = {}
-        group_stick_dict = {}
-        representitive_dict = {}
-
-        for state in self.state_set:
-            if state in self.final_state_set:
-                group_mapping_dict[state] = 1
-            else:
-                group_mapping_dict[state] = 0
-
-        for state in self.state_set:
-            for terminal in sorted_terminals:
-                result_set = self.calc(state, terminal)
-                if len(result_set) <= 0:
-                    group_stick_dict[state].append(-1)
-                else:
-                    result = group_mapping_dict[result_set.pop()]
-                    group_stick_dict[state].append(result)
-
-        for state in self.state_set:
-            if representitive_dict[group_mapping_dict[state]] is None:
-                representitive_dict[group_mapping_dict[state]] = state
-   '''
