@@ -24,15 +24,12 @@ def main():
         print(fa.__str__())
         print_txt(fa, "NFA")
         fa = fa.make_dfa()
-        print(fa.__str__())
+        fa = fa.convert_state_name()
         print_txt(fa, "DFA")
         fa = fa.reduce_dfa()
-        print(fa.__str__())
+        fa = fa.convert_state_name()
         print_txt(fa, "reduced DFA")
         print('\n')
-        for (from_state, terminal), to_state in fa.delta_functions.items():
-            print("응애!!")
-            print(f"\t({from_state}, {terminal}) = {{{to_state}}}\n")
 
 
 if __name__ == "__main__":
