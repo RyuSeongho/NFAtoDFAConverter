@@ -3,6 +3,7 @@
 from TextParser import parse_to_object
 from collections import deque
 from EpsilonClosure import epsilon_closure as ec
+import NamingModule as Settings
 
 
 class FiniteAutomata:
@@ -171,8 +172,11 @@ class FiniteAutomata:
         for state in self.state_set:
             map_new_state_to_name[group[state]] += (str(state) + ' ')
 
+        for item in map_new_state_to_name.items():
+            map_new_state_to_name[item[0]] = item[1].rstrip(' ') + ']'
+
         for state in self.state_set:
-            new_name = map_new_state_to_name[group[state]].rstrip(' ') + ']'
+            new_name = map_new_state_to_name[group[state]]
             rdfa.state_set.add(new_name)
             if state in self.final_state_set:
                 rdfa.final_state_set.add(new_name)
@@ -180,15 +184,41 @@ class FiniteAutomata:
                 rdfa.start_state = new_name
 
         for (state, terminal), value in self.delta_functions.items():
-            print("!!!!", state, terminal, value)
+            #print("!!!!", state, terminal, value)
 
-            new_key = (map_new_state_to_name[group[state]].rstrip(' ') + ']', terminal)
-            new_value = map_new_state_to_name[group[value.pop()]].rstrip(' ') + ']'
+            new_key = (map_new_state_to_name[group[state]], terminal)
+            new_value = map_new_state_to_name[group[value.pop()]]
             rdfa.delta_functions[new_key] = {new_value}
 
         return rdfa
 
 
+
+    def convert_state_name(self):
+        naming_module = Settings.NamingModule()
+        new_fa = FiniteAutomata()
+        new_fa.file_name = self.file_name
+        new_fa.terminal_set = self.terminal_set
+
+        map_new_state_to_name = {}
+
+        for state in self.state_set:
+            new_name = naming_module.get_name()
+            map_new_state_to_name[state] = new_name
+            new_fa.state_set.add(new_name)
+
+            if state == self.start_state:
+                new_fa.start_state = new_name
+
+            if state in self.final_state_set:
+                new_fa.final_state_set.add(new_name)
+
+        for (state, terminal), value in self.delta_functions.items():
+            new_key = (map_new_state_to_name[state], terminal)
+            new_value = map_new_state_to_name[value.pop()]
+            new_fa.delta_functions[new_key] = {new_value}
+
+        return new_fa
 
 
 '''
