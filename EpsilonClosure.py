@@ -1,9 +1,10 @@
 # epsilon_closure.py
 from collections import deque
-
+from OrderedSet import OrderedSet as oset
 
 def epsilon_closure(fa, initial_state):
-    result_state_set = {initial_state, }
+    result_state_set = oset()
+    result_state_set.add(initial_state)
     task_state_queue = deque([initial_state])
     while task_state_queue:
         key = (task_state_queue.pop(), 'ε')

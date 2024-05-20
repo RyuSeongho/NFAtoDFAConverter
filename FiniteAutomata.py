@@ -4,15 +4,16 @@ from TextParser import parse_to_object
 from collections import deque
 from EpsilonClosure import epsilon_closure as ec
 import NamingModule as Settings
+from OrderedSet import OrderedSet as oset
 
 
 class FiniteAutomata:
     def __init__(self, file_path=None):
-        self.state_set = set()
-        self.terminal_set = set()
+        self.state_set = oset()
+        self.terminal_set = oset()
         self.delta_functions = {}
         self.start_state = None
-        self.final_state_set = set()
+        self.final_state_set = oset()
         self.file_name = "UnnamedAutomata.txt"
 
         if file_path:
@@ -36,9 +37,9 @@ class FiniteAutomata:
 
     @staticmethod
     def integrate(material_set):
-        sorted_list = sorted(list(material_set))
+
         result = '['
-        for material in sorted_list:
+        for material in material_set:
             result += str(material)
             result += ' '
 
@@ -48,7 +49,7 @@ class FiniteAutomata:
         return result
 
     def calc(self, start_state, terminal):
-        result = set()
+        result = oset()
 
         key = (start_state, terminal)
         value = self.delta_functions.get(key)
@@ -58,7 +59,7 @@ class FiniteAutomata:
                 for value_ep_single in value_ep:
                     result.add(value_ep_single)
 
-        return sorted(list(result))
+        return result
 
     def make_dfa(self):
 
@@ -66,7 +67,7 @@ class FiniteAutomata:
 
         dfa.file_name = self.file_name
 
-        dfa.terminal_set.update(self.terminal_set)
+        dfa.terminal_set = oset(self.terminal_set)
         start_state_ep = ec(self, self.start_state)
         dfa.start_state = FiniteAutomata.integrate(start_state_ep)
 
@@ -85,12 +86,12 @@ class FiniteAutomata:
 
             for terminal in dfa.terminal_set:
 
-                result_set_for_terminal = set()
+                result_set_for_terminal = oset()
                 for state in curr_state_set:
-                    result_list = self.calc(state, terminal)
-                    if len(result_list) <= 0:
+                    result_oset = self.calc(state, terminal)
+                    if len(result_oset) <= 0:
                         continue
-                    for result in result_list:
+                    for result in result_oset:
                         result_set_for_terminal.add(result)
 
                 if len(result_set_for_terminal) <= 0:
@@ -132,12 +133,12 @@ class FiniteAutomata:
                 group_for_all_terminal = []
                 curr_dict = {'group': group[state]}
 
-                for terminal in sorted(self.terminal_set):
-                    result_list = self.calc(state, terminal)
-                    if len(result_list) <= 0:
+                for terminal in self.terminal_set:
+                    result_oset = self.calc(state, terminal)
+                    if len(result_oset) <= 0:
                         group_for_all_terminal.append(-1)
                     else:
-                        result = result_list.pop(0)
+                        result = result_oset.pop()
                         group_for_all_terminal.append(group[result])
 
                 curr_dict['result'] = tuple(group_for_all_terminal)
@@ -198,9 +199,7 @@ class FiniteAutomata:
 
         map_new_state_to_name = {}
 
-        state_list = sorted(list(self.state_set))
-
-        for state in state_list:
+        for state in self.state_set:
             new_name = naming_module.get_name()
             map_new_state_to_name[state] = new_name
             new_fa.state_set.add(new_name)
@@ -213,10 +212,10 @@ class FiniteAutomata:
 
         for (state, terminal), value in self.delta_functions.items():
             new_key = (map_new_state_to_name[state], terminal)
-            new_value_set = set()
-            value_list = sorted(list(value))
+            new_value_set = oset()
+            value_list = oset(value)
             while value_list:
-                new_value_set.add(map_new_state_to_name[value_list.pop(0)])
+                new_value_set.add(map_new_state_to_name[value_list.pop()])
             new_fa.delta_functions[new_key] = new_value_set
 
         return new_fa
